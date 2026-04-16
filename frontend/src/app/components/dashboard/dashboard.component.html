@@ -1,0 +1,177 @@
+<div class="page-container">
+
+  <div class="page-header">
+    <h1><mat-icon>dashboard</mat-icon> Production Dashboard</h1>
+    <button mat-stroked-button (click)="loadDashboard()" [disabled]="isLoading">
+      <mat-icon>refresh</mat-icon> Refresh
+    </button>
+  </div>
+
+  <div *ngIf="isLoading" class="spinner-center">
+    <mat-spinner diameter="48"></mat-spinner>
+    <p>Loading dashboard...</p>
+  </div>
+
+  <div *ngIf="!isLoading && errorMsg" class="error-box">
+    <mat-icon>error</mat-icon> {{ errorMsg }}
+    <button mat-button (click)="loadDashboard()">Retry</button>
+  </div>
+
+  <ng-container *ngIf="!isLoading && data">
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid">
+      <mat-card class="kpi-card">
+        <div class="kpi-icon blue"><mat-icon>inventory_2</mat-icon></div>
+        <div class="kpi-body">
+          <div class="kpi-val">{{ data.summary.totalOrders ?? '—' }}</div>
+          <div class="kpi-label">Total Orders</div>
+        </div>
+      </mat-card>
+      <mat-card class="kpi-card">
+        <div class="kpi-icon green"><mat-icon>solar_power</mat-icon></div>
+        <div class="kpi-body">
+          <div class="kpi-val">{{ (data.summary.totalPanels ?? 0) | number }}</div>
+          <div class="kpi-label">Total Panels</div>
+        </div>
+      </mat-card>
+      <mat-card class="kpi-card">
+        <div class="kpi-icon orange"><mat-icon>timer</mat-icon></div>
+        <div class="kpi-body">
+          <div class="kpi-val">{{ data.summary.avgLeadTimeHours ?? '—' }}h</div>
+          <div class="kpi-label">Avg Lead Time</div>
+        </div>
+      </mat-card>
+      <mat-card class="kpi-card">
+        <div class="kpi-icon purple"><mat-icon>trending_up</mat-icon></div>
+        <div class="kpi-body">
+          <div class="kpi-val">{{ avgUtil }}%</div>
+          <div class="kpi-label">Avg Line Utilisation</div>
+        </div>
+      </mat-card>
+      <mat-card class="kpi-card">
+        <div class="kpi-icon teal"><mat-icon>precision_manufacturing</mat-icon></div>
+        <div class="kpi-body">
+          <div class="kpi-val">{{ data.summary.linesUtilized ?? '—' }}</div>
+          <div class="kpi-label">Lines Active</div>
+        </div>
+      </mat-card>
+      <mat-card class="kpi-card">
+        <div class="kpi-icon red"><mat-icon>event</mat-icon></div>
+        <div class="kpi-body">
+          <div class="kpi-val" style="font-size:14px;">{{ fmtDate(data.summary.allCompleteBy) }}</div>
+          <div class="kpi-label">All Complete By</div>
+        </div>
+      </mat-card>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="charts-row">
+      <mat-card class="chart-card">
+        <mat-card-header><mat-card-title>Orders by Status</mat-card-title></mat-card-header>
+        <mat-card-content>
+          <div class="chart-wrap" style="height:200px">
+            <canvas baseChart
+                    [data]="statusChartData"
+                    [options]="statusChartOptions"
+                    type="bar">
+            </canvas>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="chart-card">
+        <mat-card-header><mat-card-title>Line Utilisation (%)</mat-card-title></mat-card-header>
+        <mat-card-content>
+          <div class="chart-wrap" [style.height]="(getLineUtilKeys().length * 36 + 60) + 'px'">
+            <canvas baseChart
+                    [data]="utilChartData"
+                    [options]="utilChartOptions"
+                    type="bar">
+            </canvas>
+          </div>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="chart-card" *ngIf="getDelaySummaryKeys().length > 0">
+        <mat-card-header><mat-card-title>Delay Reasons</mat-card-title></mat-card-header>
+        <mat-card-content>
+          <div class="chart-wrap" style="height:220px">
+            <canvas baseChart
+                    [data]="delayChartData"
+                    [options]="delayChartOptions"
+                    type="doughnut">
+            </canvas>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+    <!-- Recent Orders Table -->
+    <mat-card style="margin-top: 24px;">
+      <mat-card-header>
+        <mat-card-title>Recent Orders</mat-card-title>
+        <mat-card-subtitle>Latest scheduled production orders</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div style="overflow-x: auto;">
+          <table mat-table [dataSource]="data.recentOrders" class="orders-table">
+            <ng-container matColumnDef="orderId">
+              <th mat-header-cell *matHeaderCellDef>Order ID</th>
+              <td mat-cell *matCellDef="let o"><strong>{{ o.orderId }}</strong></td>
+            </ng-container>
+            <ng-container matColumnDef="panelType">
+              <th mat-header-cell *matHeaderCellDef>Panel Type</th>
+              <td mat-cell *matCellDef="let o">{{ o.panelType }}</td>
+            </ng-container>
+            <ng-container matColumnDef="quantity">
+              <th mat-header-cell *matHeaderCellDef>Qty</th>
+              <td mat-cell *matCellDef="let o">{{ o.quantity | number }}</td>
+            </ng-container>
+            <ng-container matColumnDef="priority">
+              <th mat-header-cell *matHeaderCellDef>Priority</th>
+              <td mat-cell *matCellDef="let o">P{{ o.priority }}</td>
+            </ng-container>
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef>Status</th>
+              <td mat-cell *matCellDef="let o">
+                <span class="status-chip" [ngClass]="statusClass(o.status)">{{ o.status }}</span>
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="leadTime">
+              <th mat-header-cell *matHeaderCellDef>Lead Time</th>
+              <td mat-cell *matCellDef="let o">{{ fmtLeadTime(o.totalLeadTimeMinutes) }}</td>
+            </ng-container>
+            <ng-container matColumnDef="completion">
+              <th mat-header-cell *matHeaderCellDef>Est. Completion</th>
+              <td mat-cell *matCellDef="let o">{{ fmtDate(o.estimatedCompletion) }}</td>
+            </ng-container>
+            <tr mat-header-row *matHeaderRowDef="orderColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: orderColumns;"></tr>
+          </table>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- AI Insights Panel -->
+    <mat-card style="margin-top: 24px;">
+      <mat-card-header>
+        <mat-card-title>🤖 AI Insights</mat-card-title>
+        <mat-card-subtitle>Analysis and recommendations from the scheduling agent</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div *ngIf="!insights && !insightsLoading">
+          <button mat-raised-button color="primary" (click)="loadInsights()">
+            <mat-icon>psychology</mat-icon> Load AI Insights
+          </button>
+        </div>
+        <div *ngIf="insightsLoading" style="display:flex; gap:12px; align-items:center; padding:16px">
+          <mat-spinner diameter="24"></mat-spinner> <span>Fetching AI analysis...</span>
+        </div>
+        <pre *ngIf="insights" class="insights-pre">{{ insights }}</pre>
+      </mat-card-content>
+    </mat-card>
+
+  </ng-container>
+
+</div>

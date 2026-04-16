@@ -1,0 +1,112 @@
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+.page-header h1 {
+  font-size: 22px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.spinner-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px;
+  gap: 16px;
+  color: #666;
+}
+.error-box {
+  background: #ffebee;
+  border: 1px solid #ef9a9a;
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #c62828;
+  margin-bottom: 24px;
+}
+
+/* KPI Grid */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.kpi-card {
+  display: flex !important;
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+  padding: 16px !important;
+}
+.kpi-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.kpi-icon mat-icon { color: white; }
+.kpi-icon.blue   { background: #1976d2; }
+.kpi-icon.green  { background: #388e3c; }
+.kpi-icon.orange { background: #f57c00; }
+.kpi-icon.purple { background: #7b1fa2; }
+.kpi-icon.teal   { background: #00796b; }
+.kpi-icon.red    { background: #d32f2f; }
+.kpi-val { font-size: 22px; font-weight: 500; line-height: 1.2; }
+.kpi-label { font-size: 12px; color: #666; margin-top: 2px; }
+
+/* Charts */
+.charts-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+.chart-card .mat-mdc-card-content { padding: 8px 16px 16px; }
+.chart-wrap { position: relative; }
+
+/* Table */
+.orders-table { width: 100%; }
+.orders-table th { background: #f5f5f5; font-weight: 600; }
+.orders-table td, .orders-table th { padding: 10px 12px; font-size: 13px; }
+
+/* Status chips */
+.status-chip {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.chip-blue   { background: #e3f2fd; color: #1565c0; }
+.chip-green  { background: #e8f5e9; color: #2e7d32; }
+.chip-red    { background: #ffebee; color: #c62828; }
+.chip-orange { background: #fff3e0; color: #e65100; }
+.chip-grey   { background: #f5f5f5; color: #616161; }
+
+/* AI Insights */
+.insights-pre {
+  white-space: pre-wrap;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 16px;
+  line-height: 1.6;
+  max-height: 400px;
+  overflow-y: auto;
+  color: #333;
+}

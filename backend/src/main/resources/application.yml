@@ -1,0 +1,24 @@
+spring:
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 20MB
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
+
+server:
+  port: 8080
+
+logging:
+  level:
+    com.scheduler: DEBUG
+    root: INFO
+
+ollama:
+  base-url: http://127.0.0.1:11434   # FIXED: use IPv4 explicitly
+  model: llama3.2
+  temperature: 0.2
+  max-tokens: 800

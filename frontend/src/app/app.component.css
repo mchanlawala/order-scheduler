@@ -1,0 +1,7 @@
+.app-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+.spacer { flex: 1 1 auto; }
+.active-link { background: rgba(255,255,255,0.15); border-radius: 4px; }

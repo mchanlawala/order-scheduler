@@ -1,0 +1,146 @@
+<div class="page-container">
+
+  <!-- Header -->
+  <div class="page-header">
+    <h1><mat-icon>upload_file</mat-icon> Upload Manufacturing Data</h1>
+    <p>Upload an Excel file or run the built-in demo to generate a production schedule with Gantt chart.</p>
+  </div>
+
+  <div class="content-grid">
+
+    <!-- Upload card -->
+    <mat-card class="upload-card">
+      <mat-card-header>
+        <mat-card-title>Excel File Upload</mat-card-title>
+        <mat-card-subtitle>Upload .xlsx file with Orders, ProcessSteps, Lines, Shifts, Breaks, DowntimeEvents sheets</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+
+        <div class="drop-zone"
+             [class.drag-over]="isDragOver"
+             [class.has-file]="selectedFile"
+             (dragover)="onDragOver($event)"
+             (dragleave)="onDragLeave()"
+             (drop)="onDrop($event)"
+             (click)="fileInput.click()">
+          <input #fileInput type="file" accept=".xlsx,.xls" (change)="onFileSelect($event)" style="display:none">
+
+          <ng-container *ngIf="!selectedFile">
+            <mat-icon class="upload-icon">cloud_upload</mat-icon>
+            <p class="drop-text">Drag & drop Excel file here</p>
+            <p class="drop-sub">or click to browse</p>
+          </ng-container>
+
+          <ng-container *ngIf="selectedFile">
+            <mat-icon class="file-icon">description</mat-icon>
+            <p class="file-name">{{ selectedFile.name }}</p>
+            <p class="file-size">{{ formatBytes(selectedFile.size) }}</p>
+          </ng-container>
+        </div>
+
+        <div class="action-row">
+          <button mat-raised-button color="primary" (click)="upload()" [disabled]="!selectedFile || isLoading">
+            <mat-icon>play_arrow</mat-icon> Upload & Schedule
+          </button>
+          <button mat-stroked-button (click)="clearFile()" [disabled]="!selectedFile || isLoading">
+            <mat-icon>clear</mat-icon> Clear
+          </button>
+        </div>
+
+        <mat-divider style="margin: 20px 0;"></mat-divider>
+
+        <div class="demo-section">
+          <h3>Or run with built-in demo data</h3>
+          <p>Uses 6 pre-built orders across 9 production lines with full shift/break/downtime simulation.</p>
+          <button mat-raised-button color="accent" (click)="runDemo()" [disabled]="isLoading">
+            <mat-icon>science</mat-icon> Run Demo Schedule
+          </button>
+        </div>
+
+        <div class="loading-overlay" *ngIf="isLoading">
+          <mat-spinner diameter="36"></mat-spinner>
+          <span>{{ loadingMessage }}</span>
+        </div>
+
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Schema reference card -->
+    <mat-card class="schema-card">
+      <mat-card-header>
+        <mat-card-title>Excel Schema Reference</mat-card-title>
+        <mat-card-subtitle>Required sheets and columns</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <mat-accordion>
+
+          <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title><mat-icon>list_alt</mat-icon>&nbsp; Orders <span class="required-badge">Required</span></mat-panel-title>
+            </mat-expansion-panel-header>
+            <table class="schema-table">
+              <tr><th>Column</th><th>Type</th><th>Example</th></tr>
+              <tr><td>OrderID</td><td>Text</td><td>ORD-001</td></tr>
+              <tr><td>PanelType</td><td>Text</td><td>Mono 400W</td></tr>
+              <tr><td>Wattage</td><td>Number</td><td>400</td></tr>
+              <tr><td>Quantity</td><td>Number</td><td>500</td></tr>
+              <tr><td>OrderReceived</td><td>DateTime</td><td>2025-01-06 08:00</td></tr>
+              <tr><td>DueDate</td><td>DateTime</td><td>2025-01-20 17:00</td></tr>
+              <tr><td>Priority</td><td>Number (1=high)</td><td>1</td></tr>
+              <tr><td>CustomSetup</td><td>Boolean</td><td>false</td></tr>
+            </table>
+          </mat-expansion-panel>
+
+          <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title><mat-icon>account_tree</mat-icon>&nbsp; ProcessSteps <span class="optional-badge">Optional</span></mat-panel-title>
+            </mat-expansion-panel-header>
+            <table class="schema-table">
+              <tr><th>Column</th><th>Type</th><th>Example</th></tr>
+              <tr><td>StepSeq</td><td>Number</td><td>1</td></tr>
+              <tr><td>ProcessName</td><td>Text</td><td>Stringing</td></tr>
+              <tr><td>LineID</td><td>Text</td><td>ASSY-LINE</td></tr>
+              <tr><td>SetupTimeMin</td><td>Number</td><td>30</td></tr>
+              <tr><td>ProcMinPerUnit</td><td>Decimal</td><td>0.4</td></tr>
+              <tr><td>BatchSize</td><td>Number</td><td>50</td></tr>
+              <tr><td>PrecedingStep</td><td>Number</td><td>5</td></tr>
+              <tr><td>ReconfigPenaltyMin</td><td>Number</td><td>15</td></tr>
+            </table>
+          </mat-expansion-panel>
+
+          <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title><mat-icon>precision_manufacturing</mat-icon>&nbsp; Lines <span class="optional-badge">Optional</span></mat-panel-title>
+            </mat-expansion-panel-header>
+            <table class="schema-table">
+              <tr><th>Column</th><th>Type</th><th>Example</th></tr>
+              <tr><td>LineID</td><td>Text</td><td>ASSY-LINE</td></tr>
+              <tr><td>ParallelCapacity</td><td>Number</td><td>2</td></tr>
+              <tr><td>ShiftHoursPerDay</td><td>Number</td><td>14</td></tr>
+              <tr><td>DefaultStart</td><td>HH:mm</td><td>06:00</td></tr>
+              <tr><td>DefaultEnd</td><td>HH:mm</td><td>22:00</td></tr>
+            </table>
+          </mat-expansion-panel>
+
+          <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title><mat-icon>schedule</mat-icon>&nbsp; Shifts, Breaks, DowntimeEvents <span class="optional-badge">Optional</span></mat-panel-title>
+            </mat-expansion-panel-header>
+            <p style="font-size:13px; color:#666; margin-bottom:8px">
+              <strong>Shifts:</strong> LineID, Date (YYYY-MM-DD), StartTime, EndTime<br>
+              <strong>Breaks:</strong> LineID, BreakStart (HH:mm), BreakEnd (HH:mm), DailyOccurrence<br>
+              <strong>DowntimeEvents:</strong> EventID, LineID, StartDateTime, EndDateTime, Reason, Type (Planned/Unplanned)
+            </p>
+          </mat-expansion-panel>
+
+        </mat-accordion>
+
+        <div style="margin-top: 16px; font-size: 13px; color: #555;">
+          <mat-icon style="font-size:16px; vertical-align:middle; color:#1976d2">info</mat-icon>
+          If ProcessSteps or Lines sheets are missing, the system uses 14 default solar panel manufacturing steps and 9 production lines automatically.
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+  </div>
+</div>

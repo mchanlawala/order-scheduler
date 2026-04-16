@@ -1,0 +1,16 @@
+<mat-toolbar color="primary" class="app-toolbar">
+  <mat-icon style="margin-right: 10px;">factory</mat-icon>
+  <span>Solar Panel Manufacturing Scheduler</span>
+  <span class="spacer"></span>
+  <button mat-button routerLink="/upload" routerLinkActive="active-link">
+    <mat-icon>upload_file</mat-icon> Upload / Demo
+  </button>
+  <button mat-button routerLink="/dashboard" routerLinkActive="active-link">
+    <mat-icon>dashboard</mat-icon> Dashboard
+  </button>
+  <button mat-button routerLink="/gantt" routerLinkActive="active-link">
+    <mat-icon>view_timeline</mat-icon> Gantt Chart
+  </button>
+</mat-toolbar>
+
+<router-outlet></router-outlet>
