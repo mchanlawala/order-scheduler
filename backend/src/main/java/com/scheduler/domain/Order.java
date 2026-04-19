@@ -20,4 +20,13 @@ public class Order {
     private String status;
     private Long totalLeadTimeMinutes;
     private List<StepExecution> steps;
+
+
+    private String salesOrderId;               // from JSON
+    private String material;                   // alias for panelType
+    private LocalDateTime basicStartDate;      // from JSON
+    private LocalDateTime basicFinishDate;     // from JSON
+    private LocalDateTime actualStartDate;     // from JSON
+    private LocalDateTime actualFinishDate;    // from JSON
+    private String delayReason;                // from JSON
 }

@@ -18,6 +18,12 @@ import java.util.*;
 @Service
 public class ExcelParserService {
 
+    private final ProductionOrderService productionOrderService;
+
+    public ExcelParserService(ProductionOrderService productionOrderService) {
+        this.productionOrderService = productionOrderService;
+    }
+
     private static final List<DateTimeFormatter> DT_FORMATTERS = List.of(
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"),
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
@@ -36,7 +42,7 @@ public class ExcelParserService {
         try (InputStream is = file.getInputStream();
              Workbook workbook = new XSSFWorkbook(is)) {
 
-            List<Order> orders = parseOrders(workbook);
+            List<Order> orders = productionOrderService.getAllOrders();
             List<ProcessStep> processSteps = parseProcessSteps(workbook);
             Map<String, Line> linesMap = parseLines(workbook);
 

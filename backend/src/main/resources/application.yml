@@ -22,3 +22,8 @@ ollama:
   model: llama3.2
   temperature: 0.2
   max-tokens: 800
+
+production:
+  orders:
+    json:
+      path: data/production_orders.json

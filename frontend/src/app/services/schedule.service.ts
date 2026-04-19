@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { ScheduleResult, Order, StepExecution, DashboardData } from '../models/order.model';
+import { ScheduleResult, Order, StepExecution, DashboardData, BatchExecution } from '../models/order.model';
 
 @Injectable({ providedIn: 'root' })
 export class ScheduleService {
@@ -38,6 +38,22 @@ export class ScheduleService {
 
   getInsights(): Observable<{ insights: string }> {
     return this.http.get<{ insights: string }>(`${this.api}/insights`).pipe(catchError(this.handleError));
+  }
+
+  getLineSchedule(lineId: string): Observable<StepExecution[]> {
+    return this.http.get<StepExecution[]>(`${this.api}/line/${lineId}`).pipe(catchError(this.handleError));
+  }
+
+  getLinesSummary(): Observable<{ [key: string]: any }> {
+    return this.http.get<{ [key: string]: any }>(`${this.api}/lines/summary`).pipe(catchError(this.handleError));
+  }
+
+  getLineBatches(lineId: string): Observable<BatchExecution[]> {
+    return this.http.get<BatchExecution[]>(`${this.api}/line/${lineId}/batches`).pipe(catchError(this.handleError));
+  }
+
+  getLinesBatchSummary(): Observable<{ [key: string]: any }> {
+    return this.http.get<{ [key: string]: any }>(`${this.api}/lines/batches-summary`).pipe(catchError(this.handleError));
   }
 
   private handleError(err: HttpErrorResponse) {

@@ -3,6 +3,7 @@ package com.scheduler.controller;
 import com.scheduler.agent.SchedulingAgent;
 import com.scheduler.domain.*;
 import com.scheduler.service.ExcelParserService;
+import com.scheduler.service.ProductionOrderService;
 import com.scheduler.service.SchedulingEngine;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -23,6 +25,7 @@ public class ScheduleController {
     private final ExcelParserService excelParser;
     private final SchedulingEngine schedulingEngine;
     private final SchedulingAgent schedulingAgent;
+    private final ProductionOrderService productionOrderService;
 
     // In-memory store (replace with DB for production)
     private ScheduleResult lastResult;
@@ -42,9 +45,9 @@ public class ScheduleController {
             lastParsed = parsed;
 
             ScheduleResult result = schedulingEngine.generateSchedule(
-                parsed.getOrders(),
-                parsed.getProcessSteps(),
-                parsed.getLinesMap()
+                    parsed.getOrders(),
+                    parsed.getProcessSteps(),
+                    parsed.getLinesMap()
             );
             String insights = schedulingAgent.analyseSchedule(result);
             result.setAiInsights(insights);
@@ -105,10 +108,10 @@ public class ScheduleController {
             return ResponseEntity.ok(Collections.emptyList());
         }
         return lastResult.getOrders().stream()
-            .filter(o -> o.getOrderId().equals(orderId))
-            .findFirst()
-            .map(o -> ResponseEntity.ok((Object) o.getSteps()))
-            .orElse(ResponseEntity.notFound().build());
+                .filter(o -> o.getOrderId().equals(orderId))
+                .findFirst()
+                .map(o -> ResponseEntity.ok((Object) o.getSteps()))
+                .orElse(ResponseEntity.notFound().build());
     }
 
     /**
@@ -132,8 +135,8 @@ public class ScheduleController {
                 if (o.getSteps() == null) continue;
                 for (StepExecution s : o.getSteps()) {
                     lineHours.merge(s.getLineId(),
-                        s.getDurationMinutes() != null ? s.getDurationMinutes() / 60.0 : 0.0,
-                        Double::sum);
+                            s.getDurationMinutes() != null ? s.getDurationMinutes() / 60.0 : 0.0,
+                            Double::sum);
                 }
             }
             // Normalise to percentage (assume 8h = 100%)
@@ -149,7 +152,7 @@ public class ScheduleController {
                 for (StepExecution s : o.getSteps()) {
                     if (Boolean.TRUE.equals(s.getIsDelayed()) && s.getDelayReason() != null) {
                         String reason = s.getDelayReason().length() > 30
-                            ? s.getDelayReason().substring(0, 30) : s.getDelayReason();
+                                ? s.getDelayReason().substring(0, 30) : s.getDelayReason();
                         delays.merge(reason, 1, Integer::sum);
                     }
                 }
@@ -174,19 +177,19 @@ public class ScheduleController {
             return ResponseEntity.ok(Map.of("insights", "No schedule generated yet."));
         }
         return ResponseEntity.ok(Map.of("insights",
-            lastResult.getAiInsights() != null ? lastResult.getAiInsights() : "No insights available."));
+                lastResult.getAiInsights() != null ? lastResult.getAiInsights() : "No insights available."));
     }
 
     // ---- Demo data builder ----
 
     private List<Order> buildDemoOrders() {
         String[][] data = {
-            {"ORD-001", "Monocrystalline 400W", "400", "500", "1",  "false"},
-            {"ORD-002", "Bifacial 550W",         "550", "300", "2",  "true"},
-            {"ORD-003", "Monocrystalline 320W",  "320", "800", "3",  "false"},
-            {"ORD-004", "Polycrystalline 250W",  "250", "200", "1",  "false"},
-            {"ORD-005", "Bifacial 450W",          "450", "400", "4",  "true"},
-            {"ORD-006", "Monocrystalline 500W",  "500", "150", "2",  "false"},
+                {"ORD-001", "Monocrystalline 400W", "400", "500", "1", "false"},
+                {"ORD-002", "Bifacial 550W", "550", "300", "2", "true"},
+                {"ORD-003", "Monocrystalline 320W", "320", "800", "3", "false"},
+                {"ORD-004", "Polycrystalline 250W", "250", "200", "1", "false"},
+                {"ORD-005", "Bifacial 450W", "450", "400", "4", "true"},
+                {"ORD-006", "Monocrystalline 500W", "500", "150", "2", "false"},
         };
         java.time.LocalDateTime base = java.time.LocalDateTime.now().withHour(8).withMinute(0);
         List<Order> orders = new ArrayList<>();
@@ -205,5 +208,73 @@ public class ScheduleController {
             orders.add(o);
         }
         return orders;
+    }
+
+    /**
+     * Get all steps assigned to a specific line (sorted by planned start).
+     */
+    @GetMapping("/line/{lineId}")
+    public ResponseEntity<?> getLineSchedule(@PathVariable String lineId) {
+        if (lastResult == null || lastResult.getOrders() == null) {
+            return ResponseEntity.ok(Collections.emptyList());
+        }
+        List<StepExecution> lineSteps = new ArrayList<>();
+        for (Order order : lastResult.getOrders()) {
+            if (order.getSteps() == null) continue;
+            for (StepExecution step : order.getSteps()) {
+                if (step.getLineId().equals(lineId)) {
+                    lineSteps.add(step);
+                }
+            }
+        }
+        lineSteps.sort(Comparator.comparing(StepExecution::getPlannedStart));
+        return ResponseEntity.ok(lineSteps);
+    }
+
+    /**
+     * Get summary for all lines (total steps, hours, delayed steps, etc.).
+     */
+    @GetMapping("/lines/summary")
+    public ResponseEntity<Map<String, Object>> getLinesSummary() {
+        Map<String, Object> summary = new LinkedHashMap<>();
+        if (lastResult == null || lastResult.getOrders() == null) {
+            return ResponseEntity.ok(summary);
+        }
+        Map<String, List<StepExecution>> stepsByLine = new LinkedHashMap<>();
+        for (Order order : lastResult.getOrders()) {
+            if (order.getSteps() == null) continue;
+            for (StepExecution step : order.getSteps()) {
+                stepsByLine.computeIfAbsent(step.getLineId(), k -> new ArrayList<>()).add(step);
+            }
+        }
+        for (Map.Entry<String, List<StepExecution>> entry : stepsByLine.entrySet()) {
+            String lineId = entry.getKey();
+            List<StepExecution> steps = entry.getValue();
+            long totalMinutes = steps.stream().mapToLong(StepExecution::getDurationMinutes).sum();
+            double totalHours = totalMinutes / 60.0;
+            long delayedSteps = steps.stream().filter(s -> Boolean.TRUE.equals(s.getIsDelayed())).count();
+            LocalDateTime firstStart = steps.stream().map(StepExecution::getPlannedStart).min(LocalDateTime::compareTo).orElse(null);
+            LocalDateTime lastEnd = steps.stream().map(StepExecution::getPlannedEnd).max(LocalDateTime::compareTo).orElse(null);
+            Map<String, Object> lineData = new LinkedHashMap<>();
+            lineData.put("totalSteps", steps.size());
+            lineData.put("totalHours", Math.round(totalHours * 10) / 10.0);
+            lineData.put("delayedSteps", delayedSteps);
+            lineData.put("firstStart", firstStart);
+            lineData.put("lastEnd", lastEnd);
+            summary.put(lineId, lineData);
+        }
+        return ResponseEntity.ok(summary);
+    }
+
+
+    @GetMapping("/production-orders")
+    public ResponseEntity<List<Order>> getProductionOrders() {
+        return ResponseEntity.ok(productionOrderService.getAllOrders());
+    }
+
+    @GetMapping("/original-leadtime/{orderId}")
+    public ResponseEntity<Map<String, Long>> getOriginalLeadTime(@PathVariable String orderId) {
+        Long lead = productionOrderService.getOriginalLeadTime(orderId);
+        return ResponseEntity.ok(Map.of("originalLeadTimeMinutes", lead != null ? lead : 0L));
     }
 }

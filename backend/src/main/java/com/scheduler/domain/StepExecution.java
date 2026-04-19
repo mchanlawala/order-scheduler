@@ -2,6 +2,7 @@ package com.scheduler.domain;
 
 import lombok.Data;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 public class StepExecution {
@@ -14,4 +15,5 @@ public class StepExecution {
     private Boolean isDelayed;
     private String delayReason;
     private String color;
+    //private List<BatchExecution> batches;
 }

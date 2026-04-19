@@ -52,7 +52,7 @@
       <mat-card class="kpi-card">
         <div class="kpi-icon teal"><mat-icon>precision_manufacturing</mat-icon></div>
         <div class="kpi-body">
-          <div class="kpi-val">{{ data.summary.linesUtilized ?? '—' }}</div>
+          <div class="kpi-val">{{ data.summary.linesUtilized !== undefined ? data.summary.linesUtilized : '—' }}</div>
           <div class="kpi-label">Lines Active</div>
         </div>
       </mat-card>

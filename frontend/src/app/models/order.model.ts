@@ -1,3 +1,20 @@
+export interface BatchExecution {
+  orderId: string;
+  stepSeq: number;
+  processName: string;
+  lineId: string;
+  batchNumber: number;
+  batchQuantity: number;
+  plannedStart: string;
+  plannedEnd: string;
+  durationMinutes: number;
+  isDelayed: boolean;
+  delayReason: string | null;
+  color: string;
+  leftPct?: number;
+  widthPct?: number;
+}
+
 export interface StepExecution {
   stepSeq: number;
   processName: string;
@@ -8,6 +25,10 @@ export interface StepExecution {
   isDelayed: boolean;
   delayReason: string | null;
   color: string;
+  orderId?: string;
+  leftPct?: number;
+  widthPct?: number;
+  batches?: BatchExecution[];
 }
 
 export interface Order {
